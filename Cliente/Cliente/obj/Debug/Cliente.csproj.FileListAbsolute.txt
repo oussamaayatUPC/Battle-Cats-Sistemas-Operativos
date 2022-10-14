@@ -11,3 +11,15 @@ C:\Users\oussa\OneDrive\Escritorio\Cliente\Cliente\obj\Debug\Cliente.exe
 C:\Users\oussa\OneDrive\Escritorio\Cliente\Cliente\obj\Debug\Cliente.pdb
 C:\Users\oussa\OneDrive\Escritorio\Cliente\Cliente\obj\Debug\Cliente.Formulario_de_bienvenida.resources
 C:\Users\oussa\OneDrive\Escritorio\Cliente\Cliente\obj\Debug\Cliente.Registro.resources
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\bin\Debug\Cliente.exe.config
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\bin\Debug\Cliente.exe
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\bin\Debug\Cliente.pdb
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.csproj.AssemblyReference.cache
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.Formulario_de_bienvenida.resources
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.Login.resources
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.Properties.Resources.resources
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.Registro.resources
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.csproj.GenerateResource.cache
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.csproj.CoreCompileInputs.cache
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.exe
+C:\Users\bielb\Desktop\share\projecte\Battle-Cats-Sistemas-Operativos\Cliente\Cliente\obj\Debug\Cliente.pdb
