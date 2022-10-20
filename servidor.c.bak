@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <mysql.h>
 
-#define port 35678
+#define port 9050
 
 #define id_max_length 10
 #define email_max_length 50
