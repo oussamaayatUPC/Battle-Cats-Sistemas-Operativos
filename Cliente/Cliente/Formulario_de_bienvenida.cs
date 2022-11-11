@@ -43,11 +43,11 @@ namespace Cliente
         private void Formulario_de_bienvenida_Load(object sender, EventArgs e)
         {
 
-            endpoint = new IPEndPoint(ip, port);
-            servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            try
+            //endpoint = new IPEndPoint(ip, port);
+            //servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //try
             {
-                servidor.Connect(endpoint);
+                //servidor.Connect(endpoint);
                 string mensaje = "6/ usuarios";
                 byte[] msg = Encoding.ASCII.GetBytes(mensaje);
                 servidor.Send(msg);
@@ -64,11 +64,11 @@ namespace Cliente
                     if (usuarios[i] != "-")
                         usuarios_grid.Rows[i].Cells[0].Value = usuarios[i];
                 }
-                servidor.Close();
+                //servidor.Close();
             }
-            catch (SocketException)
+            //catch (SocketException)
             {
-                MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
+                //MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
             }
 
 
@@ -89,9 +89,10 @@ namespace Cliente
                     MessageBox.Show("Por favor, introduzca un día válido");
                 else
                 {
-                    try {
-                        servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        servidor.Connect(endpoint);
+                    //try
+                    {
+                        //servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        //servidor.Connect(endpoint);
                         String daytoadd;
                         daytoadd = Convert.ToString(Convert.ToInt32(partes[2]) + 1);
                         if (Convert.ToInt32(daytoadd) < 10)
@@ -105,12 +106,12 @@ namespace Cliente
                         servidor.Receive(respuesta);
                         mensaje = Encoding.ASCII.GetString(respuesta).Split('\0')[0];
                         MessageBox.Show("El número total de partidas jugadas en el " + dia_textbox.Text + " es igual a " + mensaje);
-                        servidor.Close();
+                        //servidor.Close();
 
                     }
-                    catch (SocketException)
+                    //catch (SocketException)
                     {
-                        MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
+                        //MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
                     }
                 }
 
@@ -131,10 +132,10 @@ namespace Cliente
         {
             selected_user = (string)usuarios_grid.CurrentCell.Value;
             selected_user = (string)usuarios_grid.CurrentCell.Value;
-            try
+            //try
             {
-                servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                servidor.Connect(endpoint);
+                //servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                //servidor.Connect(endpoint);
                 string mensaje = "5/" + selected_user;
                 byte[] msg = Encoding.ASCII.GetBytes(mensaje);
                 servidor.Send(msg);
@@ -142,12 +143,12 @@ namespace Cliente
                 servidor.Receive(respuesta);
                 mensaje = Encoding.ASCII.GetString(respuesta).Split('\0')[0];
                 MessageBox.Show("El número total de victorias de " + selected_user + " es igual a " + mensaje);
-                servidor.Close();
+                //servidor.Close();
 
             }
-            catch (SocketException)
+            //catch (SocketException)
             {
-                MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
+                //MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
             }
         }
 
@@ -155,10 +156,10 @@ namespace Cliente
             private void tiempo_medio_button_Click(object sender, EventArgs e)
             {
                 selected_user = (string)usuarios_grid.CurrentCell.Value;
-                try
+                //try
                 {
-                    servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    servidor.Connect(endpoint);
+                    //servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    //servidor.Connect(endpoint);
                     string mensaje = "4/" + selected_user;
                     byte[] msg = Encoding.ASCII.GetBytes(mensaje);
                     servidor.Send(msg);
@@ -166,13 +167,69 @@ namespace Cliente
                     servidor.Receive(respuesta);
                     mensaje = Encoding.ASCII.GetString(respuesta).Split('\0')[0];
                     MessageBox.Show("El tiempo medio de partidas de " + selected_user + " es igual a " + mensaje);
-                    servidor.Close();
+                    //servidor.Close();
 
                 }
-                catch (SocketException)
+                //catch (SocketException)
                 {
-                    MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
+                    //MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
                 }
             }
+
+        private void Conectados_Button_Click(object sender, EventArgs e)
+        {
+            //try
+            {
+                //servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                //servidor.Connect(endpoint);
+                string mensaje = "7/";
+                byte[] msg = Encoding.ASCII.GetBytes(mensaje);
+                servidor.Send(msg);
+                byte[] respuesta = new byte[80];
+                servidor.Receive(respuesta);
+                mensaje = Encoding.ASCII.GetString(respuesta).Split('\0')[0];
+                Conectados.Text = mensaje;
+                //servidor.Close();
+
+            }
+            //catch (SocketException)
+            {
+                //MessageBox.Show("Se ha producido un error al intentar conectar con el servidor."); ;
+            }
+        }
+
+        private void Conectar_Button_Click(object sender, EventArgs e)
+        {
+            
+            endpoint = new IPEndPoint(ip, port); //igual que al servidor
+
+
+            //Creamos el socket 
+            servidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                servidor.Connect(endpoint);//Intentamos conectar el socket
+                this.BackColor = Color.Red;
+            }
+            catch (SocketException)
+            {
+                //Si hay excepcion imprimimos error y salimos del programa con return 
+                MessageBox.Show("No he podido conectar con el servidor");
+                return;
+            }
+        }
+
+        private void Desconectar_Button_Click(object sender, EventArgs e)
+        {
+            string desconnexio = "0/";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(desconnexio);
+            servidor.Send(msg);
+
+            // Se terminó el servicio. 
+            // Nos desconectamos
+            this.BackColor = Color.Gray;
+            servidor.Shutdown(SocketShutdown.Both);
+            servidor.Close();
         }
     }
+   }

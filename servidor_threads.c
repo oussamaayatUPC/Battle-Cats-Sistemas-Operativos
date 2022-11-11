@@ -14,7 +14,6 @@
 #define email_max_length 50
 #define username_max_length 20
 #define password_max_length 20
-#define max_users 100
 
 #define email_min_length 4
 #define username_min_length 4
@@ -28,74 +27,6 @@
 #define database_username "root"
 #define database_password "mysql"
 #define database_host "localhost"
-
-typedef struct
-{
-	int socket; // User's socket
-	pthread_t thread; //User's thread
-	char username[username_max_length]; //Username
-	char email[email_max_length];  //Email
-	int logged; //if the user has logged in or not.
-	
-	
-}User;
-
-typedef struct
-{
-	User usuario[max_users];
-	int num;
-}UserList;
-
-UserList llista;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-
-void send_user_list(char resposta[write_buffer_length]) { //La llista ja està a dalt com a paràmetre.
-
-	pthread_mutex_lock(&mutex); //Establim el bloqueig (no podem saltar a un altre thread).
-
-	sprintf(resposta, "%d/", llista.num); //Número d'elements a la llista.
-
-	for (int i = 0; i < llista.num; i++) 
-
-		sprintf(output, "%s%s/", resposta, llista.usuario[i].username) 
-
-	pthread_mutex_unlock(&mutex); //Alliberem el bloqueig (podem saltar a un altre thread).
-
-}
-
-void delete_user(int socket) { //La llista ja està a dalt com a paràmetre.
-
-	pthread_mutex_lock(&mutex);
-
-	int i,j;
-	int encontrado = 0;
-	
-
-	while((i < llista.num) &&(encontrado == 0)) //Amb aquest bucle obtenim la posició de l'element a eliminar		
-	{
-
-		if (llista.usuario[i].socket == socket) {
-			encontrado = 1;
-		else
-			i++;
-
-		}
-
-	}
-
-	
-	for (j = i; a < (llista.num - 1); j++){
-
-		llista.usuario[j] = llista.usuario[j + 1];
-
-	}
-
-	llista.num = llista.num - 1;
-
-	pthread_mutex_unlock(&mutex);
-
-}
 
 int dime_si_usuario_y_contra_son_correctas(char nombre_usuario[username_max_length],char password[password_max_length], MYSQL *conn) {
 	MYSQL_RES *result;
@@ -311,169 +242,157 @@ int devuelvaPartidasGanadas(char usuario[username_max_length], MYSQL *conn)
 	
 	return victorias; 
 	}// We return the value obtained 
-	
-	
-	
 }	
-
-
-
-
-void atenderClientes(void *socket)
-{
-	int sock_conn, sock_listen, ret;
-	struct sockaddr_in serv_adr;
+void *AtenderCliente (void *socket){
+	int sock_conn;
+	int *s;
+	s = (int *) socket;
+	sock_conn = *s;
 	char peticion[read_buffer_length];
 	char respuesta[write_buffer_length];
-	int stop = 0;
-	while(stop == 0){
-					
-		ret = read(sock_conn,peticion,sizeof(peticion));
-		printf("Recibido");
-		peticion[ret]='\0';
+	int ret;
+	int terminar =0;
+	while  (terminar == 0){
 		
-		printf("Peticion: %s\n",peticion);
-		
-		char *p = strtok (peticion, "/");
-		int codigo = atoi(p);
-		
-		char nombre_usuario[username_max_length];
-		
-		
-		char contrasena[password_max_length];
-		char correo[email_max_length];
-		char fecha[10];
-		char dia1[10];
-		char dia2[10];
-		MYSQL *conn;
-		conn = mysql_init(NULL);
-		if (conn == NULL) {
-			printf("Error al crear la conexion: %u %s\n", mysql_errno(conn), mysql_error(conn));
-			exit(1);
-		}
-		conn = mysql_real_connect(conn, database_host, database_username, database_password, database_name, 0, NULL, 0);
-		
-		if (conn == NULL) {
-			
-			printf("Error conectando: %u %s\n", mysql_errno(conn), mysql_error(conn));
-			exit(1);
-			
-		}
-		
-		if (codigo == 0)
-			stop = 1;
-			delete_user(sock_conn);
-		else if (codigo==1) {
-			p = strtok(NULL,"/");
-			strcpy(nombre_usuario,p);
-			
-			p = strtok(NULL,"/");
-			strcpy(contrasena,p);
-			printf ("Codigo: %d, Nombre: %s Contra: %s \n", codigo, nombre_usuario,contrasena);
-			
-			
-			
-			int valor = dime_si_usuario_y_contra_son_correctas(nombre_usuario, contrasena, conn);
-			
-			
-			
-						
-			
-			if (valor == 1)
-				strcpy(respuesta,"Login");
-			else 
-				strcpy(respuesta,"Permiso denegado");
-			write(sock_conn,respuesta,strlen(respuesta));
-			
-				
-		} 
-
-		else if (codigo == 2) {
-			p = strtok(NULL,"/");
-			strcpy(dia1,p);
-			
-			p = strtok(NULL,"/");
-			strcpy(dia2,p);
-			printf ("Codigo: %d, Dia 1: %s Dia2: %s \n", codigo, dia1,dia2);
-			
-			
-			int value =  numero_de_partidas_jugadas_en_X_intervalo_de_tiempo(dia1, dia2, conn);
-			
-			
-		    sprintf(respuesta,"%d",value);
-			write(sock_conn,respuesta,strlen(respuesta));
-			
-		}
-		
-		else if (codigo == 3) {
-			p = strtok(NULL,"/");
-			strcpy(nombre_usuario,p);
-			
-			p = strtok(NULL,"/");
-			strcpy(contrasena,p);
-			p = strtok(NULL,"/");
-			strcpy(correo,p);
-			p = strtok(NULL,"/");
-			strcpy(fecha,p);
-			printf ("Codigo: %d, Usuario: %s Contra: %s Correo: %s Fecha: %s \n", codigo, nombre_usuario,contrasena, correo, fecha);
-			
-			
-			int registro = anadir_usario_a_la_base_de_datos(nombre_usuario,contrasena,correo,fecha,conn);
-			
-			
-			if (registro == 1)
-				sprintf(respuesta,"Registro");
-			else {
-				if ((dime_si_usuario_existe(nombre_usuario,conn)  == 1))
-					sprintf(respuesta,"Usuario existente");
-				else if (dime_si_correo_existe(correo,conn)  == 1)
-					sprintf(respuesta,"Correo existente");
-								
-			
-			}
-			write(sock_conn,respuesta,strlen(respuesta));
-			
-		}
-		else if (codigo == 4) {
-			char nombre_usuario_average[username_max_length];
-			p = strtok(NULL,"/");
-			strcpy(nombre_usuario_average,p);
-			sprintf(respuesta,"%f",dame_tiempo_medio_partidas_jugador(nombre_usuario_average, conn));
-			write(sock_conn,respuesta,strlen(respuesta));
-			
-			
-			
-			
 	
-		}
-		else if (codigo == 5) {
-			char nombre_usuario_ganadas[username_max_length];
-			p = strtok(NULL,"/");
-			strcpy(nombre_usuario_ganadas,p);
-			sprintf(respuesta,"%d",devuelvaPartidasGanadas(nombre_usuario_ganadas, conn));
-			write(sock_conn,respuesta,strlen(respuesta));
-			
-			
-			
-		}
-		else if (codigo == 6) 
-		{
-		
-			char todos[90000];
-			dame_todos_los_usuarios(todos,conn);
-			
-			strcpy(respuesta,todos);
-			write(sock_conn,respuesta,strlen(respuesta));
-		}
-		
-		else if (codigo == 7)
-		{
-			send_user_list (respuesta);
-			write(sock_conn,respuesta, strlen(respuesta));
-			
-			
-		}
+	ret = read(sock_conn,peticion,sizeof(peticion));
+	printf("Recibido");
+	peticion[ret]='\0';
+	
+	printf("Peticion: %s\n",peticion);
+	
+	char *p = strtok (peticion, "/");
+	int codigo = atoi(p);
+	
+	char nombre_usuario[username_max_length];
+	
+	
+	char contrasena[password_max_length];
+	char correo[email_max_length];
+	char fecha[10];
+	char dia1[10];
+	char dia2[10];
+	MYSQL *conn;
+	conn = mysql_init(NULL);
+	if (conn == NULL) {
+		printf("Error al crear la conexion: %u %s\n", mysql_errno(conn), mysql_error(conn));
+		exit(1);
 	}
+	conn = mysql_real_connect(conn, database_host, database_username, database_password, database_name, 0, NULL, 0);
+	
+	if (conn == NULL) {
+		
+		printf("Error conectando: %u %s\n", mysql_errno(conn), mysql_error(conn));
+		exit(1);
+		
+	}
+	if (codigo==1) {
+		p = strtok(NULL,"/");
+		strcpy(nombre_usuario,p);
+		
+		p = strtok(NULL,"/");
+		strcpy(contrasena,p);
+		printf ("Codigo: %d, Nombre: %s Contra: %s \n", codigo, nombre_usuario,contrasena);
+		
+		
+		
+		int valor = dime_si_usuario_y_contra_son_correctas(nombre_usuario, contrasena, conn);
+		
+		
+		
+		
+		
+		if (valor == 1)
+			strcpy(respuesta,"Login");
+		else 
+			strcpy(respuesta,"Permiso denegado");
+		write(sock_conn,respuesta,strlen(respuesta));
+		
+		
+	} 
+	
+	else if (codigo == 2) {
+		p = strtok(NULL,"/");
+		strcpy(dia1,p);
+		
+		p = strtok(NULL,"/");
+		strcpy(dia2,p);
+		printf ("Codigo: %d, Dia 1: %s Dia2: %s \n", codigo, dia1,dia2);
+		
+		
+		int value =  numero_de_partidas_jugadas_en_X_intervalo_de_tiempo(dia1, dia2, conn);
+		
+		
+		sprintf(respuesta,"%d",value);
+		write(sock_conn,respuesta,strlen(respuesta));
+		
+	}
+	
+	else if (codigo == 3) {
+		p = strtok(NULL,"/");
+		strcpy(nombre_usuario,p);
+		
+		p = strtok(NULL,"/");
+		strcpy(contrasena,p);
+		p = strtok(NULL,"/");
+		strcpy(correo,p);
+		p = strtok(NULL,"/");
+		strcpy(fecha,p);
+		printf ("Codigo: %d, Usuario: %s Contra: %s Correo: %s Fecha: %s \n", codigo, nombre_usuario,contrasena, correo, fecha);
+		
+		
+		int registro = anadir_usario_a_la_base_de_datos(nombre_usuario,contrasena,correo,fecha,conn);
+		
+		
+		if (registro == 1)
+			sprintf(respuesta,"Registro");
+		else {
+			if ((dime_si_usuario_existe(nombre_usuario,conn)  == 1))
+				sprintf(respuesta,"Usuario existente");
+			else if (dime_si_correo_existe(correo,conn)  == 1)
+				sprintf(respuesta,"Correo existente");
+			
+			
+		}
+		write(sock_conn,respuesta,strlen(respuesta));
+		
+	}
+	else if (codigo == 4) {
+		char nombre_usuario_average[username_max_length];
+		p = strtok(NULL,"/");
+		strcpy(nombre_usuario_average,p);
+		sprintf(respuesta,"%f",dame_tiempo_medio_partidas_jugador(nombre_usuario_average, conn));
+		write(sock_conn,respuesta,strlen(respuesta));
+		
+		
+		
+		
+		
+	}
+	else if (codigo == 5) {
+		char nombre_usuario_ganadas[username_max_length];
+		p = strtok(NULL,"/");
+		strcpy(nombre_usuario_ganadas,p);
+		sprintf(respuesta,"%d",devuelvaPartidasGanadas(nombre_usuario_ganadas, conn));
+		write(sock_conn,respuesta,strlen(respuesta));
+		
+		
+		
+	}
+	else if (codigo == 6) 
+	{
+		
+		char todos[90000];
+		dame_todos_los_usuarios(todos,conn);
+		
+		strcpy(respuesta,todos);
+		write(sock_conn,respuesta,strlen(respuesta));
+	}
+	}
+	mysql_close(conn);		
+	close(sock_conn);
+	
+	
 	
 }
 int main(int argc, char *argv[]) {
@@ -492,27 +411,19 @@ int main(int argc, char *argv[]) {
 		printf("Error al bind");
 	if (listen(sock_listen, 5) < 0)
 		printf("Error en el Listen");
-	int i = 0;
-	int sockets[2000];
-	
-	
-	for (;;){
-		printf ("Escuchando\n");
-		
+	int i;
+	int sockets[100];
+	i = 0;
+	pthread_t thread;
+	for(;;){
+		printf("Escuchando\n");
 		sock_conn = accept(sock_listen, NULL, NULL);
-		printf ("He recibido conexion\n");
+		printf("Conexion recibida\n");
+		sockets[i] = sock_conn;
+		pthread_create(&thread, NULL, AtenderCliente, &sockets[i]);
+		i = i + 1;
 		
-		sockets[i] =sock_conn;
-		//sock_conn és el socket del client en qüestió.
-		
-		// Creem el thread i diem els procesos que ha de fer.
-		
-		pthread_create (&llista.usuario[llista.num].thread, NULL, AtenderClientes,&sockets[i]);
-		i=i+1;
 	}
-	
-		
-	
 	return 0;
 
 }
