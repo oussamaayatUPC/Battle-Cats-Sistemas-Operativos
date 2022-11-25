@@ -1,7 +1,10 @@
-Proyecto del grupo 02 de Sistemas Operativos (2022-23-Q1)
-Battle Cats SO
-Versión 1 generada por Oussama Ayat
-Versión 1 verificada por Biel Arnal
+Proyecto del grupo 02 de Sistemas Operativos (2022-23-Q1)  
+
+Battle Cats SO  
+Versión 1 generada por Oussama Ayat  
+
+Versión 1 verificada por Biel Arnal  
+
 Versión 1 comunicada por Aleix Balust
 URL: https://youtu.be/3wKaBThd_qE
 Versión 2 generado por Biel Arnal
