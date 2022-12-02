@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <mysql.h>
 
-#define port 35678
+#define port 35671
 
 #define id_max_length 10
 #define email_max_length 50
@@ -32,7 +32,7 @@
 typedef struct
 {
 	int socket; // User's socket
-	pthread_t thread; //User's thread
+	
 	char username[username_max_length]; //Username
 	
 		
@@ -51,16 +51,12 @@ int socket_num;
 int sockets[2000];
 
 
-typedef struct
-{
-	
-	
-	
-	
-}Thread;
 
 
-//Thread threads [100];
+
+
+
+pthread_t threads [100];
 
 
 
@@ -69,13 +65,17 @@ int agregar_usuari (UserList *l, char name[20], int socket)
 {
 	pthread_mutex_lock(&mutex);
 	if (l->num == 100)
+	{
+		pthread_mutex_unlock(&mutex);
 		return -1;
+	}
 	else
 	{
 		strcpy((l->usuario[l->num].username),name);
 		
 		l->usuario[l->num].socket = socket;
 		l->num ++;
+		pthread_mutex_unlock(&mutex);
 		return 0;
 		
 	}
@@ -116,9 +116,25 @@ void send_user_list(char resposta[write_buffer_length])
 	for (int i = 0; i < llista.num; i++) 
 
 		sprintf(resposta, "%s%s/", resposta, llista.usuario[i].username);
+		resposta[strlen(resposta)-1] = '\0';
 
 	pthread_mutex_unlock(&mutex); //Alliberem el bloqueig (podem saltar a un altre thread).
 
+}
+
+void Dame_Todos_Sockets_Conectados (UserList *l,int sock [200])
+{
+	int i = 0;
+	pthread_mutex_lock(&mutex);
+	while (i<l->num)
+	{
+		sock[i] = l->usuario[i].socket;
+		i++;
+				
+	}
+	pthread_mutex_unlock(&mutex);
+	
+	
 }
 
 //retorna 0 si l'elimina o -1 si no l'elimina)
@@ -289,7 +305,7 @@ void dame_todos_los_usuarios(char usuarios[90000]  , MYSQL *conn) {
 	
 	while (row !=NULL ) {
 		strcat(usuarios,row[0]);
-		strcat(usuarios,"-");
+		strcat(usuarios,"/");
 		row = mysql_fetch_row(result);
 	}
 	usuarios[strlen(usuarios)-1] = '\0';
@@ -367,16 +383,18 @@ int devuelvaPartidasGanadas(char usuario[username_max_length], MYSQL *conn)
 
 
 
-void atenderClientes(void *socket)
+void* atenderClientes(void *socket)
+	
 {
+	int list = 0;
 	int ret;
 	int sock_conn;
-	llista.num = 0;
+	char respuesta[write_buffer_length];
 	int *s;
 	s = (int *) socket;
 	sock_conn = *s;
 	char peticion[read_buffer_length];
-	char respuesta[write_buffer_length];
+	
 	int stop = 0;
 	while(stop == 0){
 					
@@ -415,6 +433,10 @@ void atenderClientes(void *socket)
 		if (codigo == 0)
 		{
 			stop = 1;
+			strcpy(respuesta,"0/Desconexion realizada con exito");
+			printf("%s",respuesta);
+			
+			write(sock_conn,respuesta,strlen(respuesta));
 			//delete_user(sock_conn);
 		}
 		
@@ -455,6 +477,7 @@ void atenderClientes(void *socket)
 			
 			
 		    sprintf(respuesta,"2/%d",value);
+			printf("%s",respuesta);
 			write(sock_conn,respuesta,strlen(respuesta));
 			
 		}
@@ -523,35 +546,49 @@ void atenderClientes(void *socket)
 			char todos[90000];
 			dame_todos_los_usuarios(todos,conn);
 			
-			strcpy(respuesta,todos);
+			sprintf(respuesta, "6/%s", todos);
+			//strcpy(respuesta,todos);
+			printf("%s\n", respuesta);
 			write(sock_conn,respuesta,strlen(respuesta));
 		}
 		
 		
 		else if (codigo == 7)
 		{
+			int i = 0;
 			char new_user [20];
 			char notificacion [20];
+			int sock [2000];
+			
 			//printf("11");
 			p = strtok(NULL,"/");
 			//printf("11");
 			strcpy(new_user,p);
 			printf("usuario: %s\n",new_user);
-			
+				
 			int res = agregar_usuari(&llista,new_user,sock_conn);
 			
-			if (res == -1)
+			if (res == -1 )
 				printf("error al agregar usuario\n");
+			
+				
 			else
 			{
 			
 				send_user_list(respuesta);
 					
-				sprintf(respuesta,"7/%s",respuesta);
-				strcpy(notificacion,respuesta);
+				sprintf(notificacion,"7/%s",respuesta);
+				//strcpy(notificacion,respuesta);
 				printf ("la resposta és : %s \n",notificacion);
+				Dame_Todos_Sockets_Conectados(&llista,sock);
+				pthread_mutex_lock(&mutex);
+				while (i < llista.num)
+				{
 					
-				write(sock_conn,respuesta,strlen(respuesta));
+					write(sock[i],notificacion,strlen(notificacion));
+					i++;
+				}
+				pthread_mutex_unlock(&mutex);
 			}
 		}
 	}
@@ -559,6 +596,7 @@ void atenderClientes(void *socket)
 }
 int main(int argc, char *argv[]) {
 	
+	llista.num = 0;
 	int sock_conn, sock_listen;
 	struct sockaddr_in serv_adr;
 	if ((sock_listen = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -573,11 +611,12 @@ int main(int argc, char *argv[]) {
 		printf("Error al bind");
 	if (listen(sock_listen, 5) < 0)
 		printf("Error en el Listen");
-	int i = 0;
 	
 	
 	
-	for (;;){
+	
+	for (;;)
+	{
 		printf ("Escuchando\n");
 		
 		sock_conn = accept(sock_listen, NULL, NULL);
@@ -589,10 +628,18 @@ int main(int argc, char *argv[]) {
 		
 		// Creem el thread i diem els procesos que ha de fer.
 		
-		pthread_create (&llista.usuario[llista.num].thread, NULL, *atenderClientes,&sockets[socket_num]);
+		pthread_create (&threads[socket_num], NULL, atenderClientes,&sockets[socket_num]);
 		socket_num ++;
+	
 	}
 	
+	for(;;)
+	{
+		pthread_join(threads[socket_num],NULL);
+		
+		
+		
+	}
 		
 	
 	return 0;
